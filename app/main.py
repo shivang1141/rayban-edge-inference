@@ -2,6 +2,8 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 import uvicorn
 import logging
 
+from app.config import settings
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -27,4 +29,4 @@ async def websocket_endpoint(websocket: WebSocket):
         logger.error(f"WebSocket error: {e}")
 
 if __name__ == "__main__":
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("app.main:app", host=settings.host, port=settings.port, reload=True)
