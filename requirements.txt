@@ -4,3 +4,6 @@ websockets
 pydantic
 pydantic-settings
 faster-whisper
+torch
+transformers
+accelerate
