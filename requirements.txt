@@ -7,3 +7,4 @@ faster-whisper
 torch
 transformers
 accelerate
+Pillow
