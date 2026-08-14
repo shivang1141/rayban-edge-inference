@@ -30,12 +30,24 @@ class VLMService:
         if self.mock:
             return f"[Mock VLM Response]: I see the image. Regarding '{prompt}', it looks great."
 
-        image_bytes = base64.b64decode(image_b64)
-        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-
-        inputs = self.processor(text=prompt, images=image, return_tensors="pt").to(self.device)
-
-        # Generate
-        generate_ids = self.model.generate(**inputs, max_new_tokens=128)
-        response = self.processor.batch_decode(generate_ids, skip_special_tokens=True)[0]
-        return response
+        try:
+            image_bytes = base64.b64decode(image_b64)
+            image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+            
+            # Format prompt based on specific VLM requirements (e.g., LLaVA)
+            text_prompt = f"USER: <image>\n{prompt}\nASSISTANT:"
+            
+            inputs = self.processor(text=text_prompt, images=image, return_tensors="pt").to(self.device)
+            
+            # Generate
+            generate_ids = self.model.generate(**inputs, max_new_tokens=128)
+            response = self.processor.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+            
+            # Basic cleanup if assistant tag remains
+            if "ASSISTANT:" in response:
+                response = response.split("ASSISTANT:")[1].strip()
+            
+            return response
+        except Exception as e:
+            logger.error(f"Error during VLM inference: {e}")
+            return "Sorry, I couldn't process that image."
