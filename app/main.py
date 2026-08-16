@@ -6,6 +6,7 @@ from app.config import settings
 from app.services.stt import STTService
 from app.services.router import IntentRouter
 from app.services.llm import LLMService
+from app.services.vlm import VLMService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,6 +17,7 @@ app = FastAPI(title="Meta Ray-Ban Smart Glasses Backend", version="1.0.0")
 logger.info("Initializing services...")
 stt_service = STTService(model_size=settings.stt_model_size)
 llm_service = LLMService(model_id=settings.llm_model_id, mock=settings.mock_llm)
+vlm_service = VLMService(model_id=settings.vlm_model_id, mock=settings.mock_vlm)
 
 @app.get("/")
 async def root():
@@ -42,7 +44,16 @@ async def websocket_endpoint(websocket: WebSocket):
                 route = IntentRouter.classify_intent(transcription)
 
                 # --- PHASE 3: Inference ---
-                response_text = await llm_service.generate(transcription)
+                response_text = ""
+
+                if route == "VISION_REQUIRED":
+                    if "image" in data and data["image"]:
+                        response_text = await vlm_service.generate(transcription, data["image"])
+                    else:
+                        response_text = "I need an image to answer that, but none was provided."
+                else:
+                    response_text = await llm_service.generate(transcription)
+
                 logger.info(f"Model Response: '{response_text}'")
 
                 await websocket.send_json({
