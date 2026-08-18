@@ -7,6 +7,7 @@ from app.services.stt import STTService
 from app.services.router import IntentRouter
 from app.services.llm import LLMService
 from app.services.vlm import VLMService
+from app.services.tts import TTSService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -18,6 +19,7 @@ logger.info("Initializing services...")
 stt_service = STTService(model_size=settings.stt_model_size)
 llm_service = LLMService(model_id=settings.llm_model_id, mock=settings.mock_llm)
 vlm_service = VLMService(model_id=settings.vlm_model_id, mock=settings.mock_vlm)
+tts_service = TTSService(mock=settings.mock_tts)
 
 @app.get("/")
 async def root():
@@ -56,11 +58,16 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 logger.info(f"Model Response: '{response_text}'")
 
+                # --- PHASE 4: TTS & Delivery ---
+                audio_response_b64 = await tts_service.generate_audio_b64(response_text)
+
+                # Send the final payload back to the glasses
                 await websocket.send_json({
                     "status": "success",
                     "route": route,
                     "transcription": transcription,
-                    "text_response": response_text
+                    "text_response": response_text,
+                    "audio_response": audio_response_b64
                 })
             else:
                 await websocket.send_json({"status": "error", "message": "No audio payload found."})
