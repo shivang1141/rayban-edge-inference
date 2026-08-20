@@ -1,6 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 import uvicorn
 import logging
+import time
 
 from app.config import settings
 from app.services.stt import STTService
@@ -34,20 +35,23 @@ async def websocket_endpoint(websocket: WebSocket):
             # Expecting {"audio": "base64...", "image": "base64..." (optional)}
             data = await websocket.receive_json()
             logger.info(f"Received payload keys: {list(data.keys())}")
-
+            
             if "audio" in data:
                 audio_b64 = data["audio"]
-
+                
                 # --- PHASE 1: STT ---
+                start_time = time.time()
                 transcription = await stt_service.transcribe_base64(audio_b64)
-                logger.info(f"Transcription: '{transcription}'")
-
+                stt_latency = time.time() - start_time
+                logger.info(f"Transcription: '{transcription}' (Latency: {stt_latency:.2f}s)")
+                
                 # --- PHASE 2: Routing ---
                 route = IntentRouter.classify_intent(transcription)
-
+                
                 # --- PHASE 3: Inference ---
+                inference_start = time.time()
                 response_text = ""
-
+                
                 if route == "VISION_REQUIRED":
                     if "image" in data and data["image"]:
                         response_text = await vlm_service.generate(transcription, data["image"])
@@ -55,19 +59,29 @@ async def websocket_endpoint(websocket: WebSocket):
                         response_text = "I need an image to answer that, but none was provided."
                 else:
                     response_text = await llm_service.generate(transcription)
-
-                logger.info(f"Model Response: '{response_text}'")
-
+                
+                inference_latency = time.time() - inference_start
+                logger.info(f"Model Response: '{response_text}' (Latency: {inference_latency:.2f}s)")
+                
                 # --- PHASE 4: TTS & Delivery ---
+                tts_start = time.time()
                 audio_response_b64 = await tts_service.generate_audio_b64(response_text)
-
+                tts_latency = time.time() - tts_start
+                logger.info(f"TTS Generated (Latency: {tts_latency:.2f}s)")
+                
                 # Send the final payload back to the glasses
                 await websocket.send_json({
                     "status": "success",
                     "route": route,
                     "transcription": transcription,
                     "text_response": response_text,
-                    "audio_response": audio_response_b64
+                    "audio_response": audio_response_b64,
+                    "metrics": {
+                        "stt_latency": stt_latency,
+                        "inference_latency": inference_latency,
+                        "tts_latency": tts_latency,
+                        "total_latency": time.time() - start_time
+                    }
                 })
             else:
                 await websocket.send_json({"status": "error", "message": "No audio payload found."})
