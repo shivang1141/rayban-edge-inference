@@ -45,6 +45,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 stt_latency = time.time() - start_time
                 logger.info(f"Transcription: '{transcription}' (Latency: {stt_latency:.2f}s)")
                 
+                if not transcription:
+                    continue
+
                 # --- PHASE 2: Routing ---
                 route = IntentRouter.classify_intent(transcription)
                 
