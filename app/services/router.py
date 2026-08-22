@@ -4,9 +4,11 @@ logger = logging.getLogger(__name__)
 
 # Basic heuristic for intent classification
 VISION_KEYWORDS = [
-    "this", "that",
-    "look", "see",
-    "what is"
+    "this", "that", "these", "those",
+    "look", "looking at", "see",
+    "sign", "translate", "read",
+    "front of me", "what is", "who is",
+    "what color", "how many"
 ]
 
 class IntentRouter:
