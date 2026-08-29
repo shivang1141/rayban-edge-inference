@@ -24,7 +24,7 @@ This project is built to handle streaming audio and image data from the glasses,
    - Converts the textual output from the models into natural-sounding speech.
    - Packages the output as a `base64` audio payload and sends it back to the glasses via WebSocket.
 
-## 🛠 Prerequisities
+## 🛠 Prerequisites
 
 - Python 3.10+
 - A compatible OS (Windows/Mac/Linux)
@@ -43,7 +43,7 @@ This project is built to handle streaming audio and image data from the glasses,
    source venv/bin/activate
    ```
 
-2. **Install the dependancies**:
+2. **Install the dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
