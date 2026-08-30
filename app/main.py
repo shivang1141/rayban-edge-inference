@@ -17,6 +17,8 @@ app = FastAPI(title="Meta Ray-Ban Smart Glasses Backend", version="1.0.0")
 
 # Initialize services
 logger.info("Initializing services...")
+# In a real environment, you might not mock these. 
+# They are initialized based on the configuration (defaults to mocked).
 stt_service = STTService(model_size=settings.stt_model_size)
 llm_service = LLMService(model_id=settings.llm_model_id, mock=settings.mock_llm)
 vlm_service = VLMService(model_id=settings.vlm_model_id, mock=settings.mock_vlm)
@@ -68,6 +70,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 # --- PHASE 4: TTS & Delivery ---
                 tts_start = time.time()
+                # For chunked TTS, we would yield audio chunks. Here we just generate the whole response.
                 audio_response_b64 = await tts_service.generate_audio_b64(response_text)
                 tts_latency = time.time() - tts_start
                 logger.info(f"TTS Generated (Latency: {tts_latency:.2f}s)")
