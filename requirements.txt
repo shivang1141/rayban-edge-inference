@@ -3,6 +3,7 @@ uvicorn[standard]
 websockets
 pydantic
 pydantic-settings
+python-multipart
 faster-whisper
 torch
 transformers
